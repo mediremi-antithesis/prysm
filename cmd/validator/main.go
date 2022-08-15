@@ -4,6 +4,8 @@
 package main
 
 import (
+	"net/http/pprof"
+	"net/http"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -117,6 +119,22 @@ func init() {
 }
 
 func main() {
+	// pprof on port 4242
+	mux := http.NewServeMux()
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	pprofServer := http.Server{
+		Addr: fmt.Sprintf(":%v", 4242),
+		Handler: mux,
+	}
+	go func() {
+		pprofServer.ListenAndServe()
+	}()
+
+
 	app := cli.App{}
 	app.Name = "validator"
 	app.Usage = `launches an Ethereum validator client that interacts with a beacon chain, starts proposer and attester services, p2p connections, and more`
